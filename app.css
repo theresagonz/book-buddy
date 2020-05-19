@@ -55,12 +55,12 @@ button:active {
   border-color: #a80041;
 }
 
-.projects {
+.books {
   margin: 1rem;
   border: 1px solid #ff0062;
 }
 
-.projects header {
+.books header {
   background: #ff0062;
   height: 3.5rem;
   display: flex;
@@ -68,41 +68,41 @@ button:active {
   align-items: center;
 }
 
-#finished-projects {
+#finished-books {
   border-color: #0044ff;
 }
 
-#finished-projects header {
+#finished-books header {
   background: #0044ff;
 }
 
-.projects h2 {
+.books h2 {
   margin: 0;
   color: white;
 }
 
-.projects ul {
+.books ul {
   list-style: none;
   margin: 0;
   padding: 1rem;
 }
 
-.projects li {
+.books li {
   box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.26);
   padding: 1rem;
   margin: 1rem;
 }
 
-.projects li h2 {
+.books li h2 {
   color: #ff0062;
   margin: 0.5rem 0;
 }
 
-#finished-projects li h2 {
+#finished-books li h2 {
   color: #0044ff;
 }
 
-.projects li h3 {
+.books li h3 {
   color: #575757;
   font-size: 1rem;
 }
@@ -115,7 +115,7 @@ button:active {
   background: #ffe3ee;
 }
 
-#finished-projects .droppable {
+#finished-books .droppable {
   background: #d6e1ff;
 }
 
