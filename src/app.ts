@@ -1,7 +1,27 @@
+enum BookStatus {
+  ToRead,
+  Reading,
+  Finished,
+}
+
+// Book Type - so books have a uniform structure
+// using class (instead of Type or Interface) to enable instantiation
+class Book {
+  constructor(
+    public id: string,
+    public title: string,
+    public author: string,
+    public priority: number,
+    public status: BookStatus
+  ) {}
+}
+
+type Listener = (items: Book[]) => void;
+
 // State Management
 class BookState {
-  private listeners: any[] = [];
-  private books: any[] = [];
+  private listeners: Listener[] = [];
+  private books: Book[] = [];
   private static instance: BookState;
 
   // private constructor guarantees singleton class (only one instance of BookState)
@@ -15,18 +35,18 @@ class BookState {
     return this.instance;
   }
 
-  addListener(listenerFn: Function) {
-    // console.log('this.listeners', this.listeners)
+  addListener(listenerFn: Listener) {
     this.listeners.push(listenerFn);
   }
 
   addBook(title: string, author: string, priority: number) {
-    const newBook = {
-      id: Math.random().toString(),
+    const newBook = new Book(
+      Math.random().toString(),
       title,
       author,
       priority,
-    };
+      BookStatus.ToRead
+    );
     this.books.push(newBook);
     for (const listenerFn of this.listeners) {
       // use a copy of array (so array is not mutated)
@@ -84,7 +104,7 @@ class BookList {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
-  addedBooks: any[];
+  addedBooks: Book[];
 
   constructor(private type: "to read" | "reading" | "finished") {
     this.templateElement = document.getElementById(
@@ -100,7 +120,7 @@ class BookList {
     this.element = importedNode.firstElementChild as HTMLElement;
     this.element.id = `${this.type}-books`;
 
-    bookState.addListener((books: any[]) => {
+    bookState.addListener((books: Book[]) => {
       this.addedBooks = books;
       this.renderBooks();
     });
