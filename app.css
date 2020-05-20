@@ -68,6 +68,14 @@ button:active {
   align-items: center;
 }
 
+#reading-books {
+  border-color: #008837;
+}
+
+#reading-books header {
+  background: #008837;
+}
+
 #finished-books {
   border-color: #0044ff;
 }

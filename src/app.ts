@@ -40,6 +40,39 @@ function Autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   return adjDescriptor;
 }
 
+class BookList {
+  templateElement: HTMLTemplateElement;
+  hostElement: HTMLDivElement;
+  element: HTMLElement;
+
+  constructor(private type: 'to read' | 'reading' | 'finished') {
+    this.templateElement = document.getElementById(
+      "book-list"
+    )! as HTMLTemplateElement;
+    this.hostElement = document.getElementById("app")! as HTMLDivElement;
+
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true
+    );
+    this.element = importedNode.firstElementChild as HTMLElement;
+    this.element.id = `${this.type}-books`;
+
+    this.renderContent();
+    this.attach();
+  }
+
+  private renderContent() {
+    const listId = `${this.type}-books-list`;
+    this.element.querySelector('ul')!.id = listId;
+    this.element.querySelector('h2')!.textContent = this.type.toUpperCase();
+  }
+
+  private attach() {
+    this.hostElement.insertAdjacentElement('beforeend', this.element);
+  }
+}
+
 class BookInput {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
@@ -196,3 +229,6 @@ class BookInput {
 }
 
 const bookInput = new BookInput();
+const toReadInput = new BookList('to read');
+const readingInput = new BookList('reading');
+const finishedInput = new BookList('finished');
