@@ -126,7 +126,9 @@ button:active {
   background: #f7f7f7;
 }
 
-#error-message {
+.form-error {
   color: #ff0062;
-  margin-bottom: 10px;
+  font-size: 0.9rem;
+  margin-top: -3px;
+  margin-bottom: 15px;
 }

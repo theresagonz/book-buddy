@@ -13,17 +13,19 @@
       <form>
         <div class="form-control">
           <label for="title">Title</label>
-          <input type="text" id="title" />
+          <input type="text" id="title" autofocus />
+          <div id="title-error" class="form-error"></div>
         </div>
         <div class="form-control">
           <label for="author">Author</label>
           <input type="text" id="author" />
+          <div id="author-error" class="form-error"></div>
         </div>
         <div class="form-control">
           <label for="priority">Priority (1-10)</label>
           <input type="number" id="priority" step="1" min="1" max="10" />
+          <div id="priority-error" class="form-error"></div>
         </div>
-        <div id="error-message"></div>
         <button type="submit">ADD BOOK</button>
       </form>
     </template>

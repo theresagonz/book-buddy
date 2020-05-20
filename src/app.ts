@@ -47,6 +47,9 @@ class BookInput {
   titleInputElement: HTMLInputElement;
   authorInputElement: HTMLInputElement;
   priorityInputElement: HTMLInputElement;
+  titleErrorElement: HTMLElement;
+  authorErrorElement: HTMLElement;
+  priorityErrorElement: HTMLElement;
 
   constructor() {
     this.templateElement = document.getElementById(
@@ -71,8 +74,31 @@ class BookInput {
       "#priority"
     ) as HTMLInputElement;
 
+    this.titleErrorElement = this.element.querySelector('#title-error') as HTMLElement;
+    this.authorErrorElement = this.element.querySelector('#author-error') as HTMLElement;
+    this.priorityErrorElement = this.element.querySelector('#priority-error') as HTMLElement;
+
     this.configure();
     this.attach();
+  }
+
+  private validateField(
+    validatable: Validatable,
+    errorElement: HTMLElement,
+    errorText: string
+  ): boolean {
+
+    if (validate(validatable)) {
+      if (errorElement.innerText === errorText) {
+        errorElement.parentNode?.removeChild(errorElement);
+      }
+      return true;
+    } else {
+      if (errorElement?.innerText !== errorText) {
+        errorElement.appendChild(document.createTextNode(errorText));
+      }
+      return false;
+    }
   }
 
   // either returns a tuple or nothing
@@ -85,13 +111,13 @@ class BookInput {
       value: enteredTitle,
       required: true,
       minLength: 1,
-      maxLength: 50,
+      maxLength: 100,
     };
     const authorValidatable: Validatable = {
       value: enteredAuthor,
       required: true,
-      minLength: 2,
-      maxLength: 10,
+      minLength: 1,
+      maxLength: 100,
     };
     const priorityValidatable: Validatable = {
       value: enteredPriority,
@@ -99,29 +125,46 @@ class BookInput {
       min: 1,
       max: 10,
     };
+    
+    const titleErrorText = "Please enter a title";
+    const authorErrorText = "Please enter an author";
+    const priorityErrorText =
+      "Please enter a number between 1 (lowest) and 10 (highest)";
 
-    if (
-      !validate(titleValidatable) ||
-      !validate(authorValidatable) ||
-      !validate(priorityValidatable)
-    ) {
-      const priorityEl = document.getElementById('error-message')!;
-      const errorText = 'Invalid input. Please fill in all fields';
-      if (priorityEl.innerText !== errorText) {
-        priorityEl.appendChild(document.createTextNode(errorText));
-      }
-      return;
-    } else {
-      const element = document.getElementById('error-message')!;
-      element.parentNode!.removeChild(element);
-      return [enteredTitle, enteredAuthor, +enteredPriority];
-    }
+    let isValid = true;
+    isValid = this.validateField(
+      titleValidatable,
+      this.titleErrorElement,
+      titleErrorText
+    );
+    isValid = this.validateField(
+      authorValidatable,
+      this.authorErrorElement,
+      authorErrorText
+    );
+   isValid = this.validateField(
+      priorityValidatable,
+      this.priorityErrorElement,
+      priorityErrorText
+    );
+
+    if (isValid) return [enteredTitle, enteredAuthor, +enteredPriority];
   }
 
   private clearInputs() {
     this.titleInputElement.value = "";
     this.authorInputElement.value = "";
     this.priorityInputElement.value = "";
+  }
+
+  private clearTitleError() {
+    this.titleErrorElement.innerText = '';
+  }
+  private clearAuthorError() {
+    this.authorErrorElement.innerText = '';
+  }
+  private clearPriorityError() {
+    this.priorityErrorElement.innerText = '';
   }
 
   @Autobind
@@ -137,6 +180,14 @@ class BookInput {
 
   private configure() {
     this.element.addEventListener("submit", this.submitHandler);
+
+    this.titleInputElement.addEventListener('keypress', this.clearTitleError);
+    this.authorInputElement.addEventListener('keypress', this.clearAuthorError);
+    this.priorityInputElement.addEventListener('keypress', this.clearPriorityError);
+
+    this.titleInputElement.addEventListener('blur', () => this.clearTitleError);
+    this.authorInputElement.addEventListener('blur', () => this.clearAuthorError);
+    this.priorityInputElement.addEventListener('blur', this.clearPriorityError);
   }
 
   private attach() {
