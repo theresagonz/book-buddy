@@ -121,7 +121,16 @@ class BookList {
     this.element.id = `${this.type}-books`;
 
     bookState.addListener((books: Book[]) => {
-      this.addedBooks = books;
+      const relevantBooks = books.filter((book) => {
+        if (this.type === "to read") {
+          return book.status === BookStatus.ToRead;
+        } else if (this.type === "reading") {
+          return book.status === BookStatus.Reading;
+        } else {
+          return book.status === BookStatus.Finished;
+        }
+      });
+      this.addedBooks = relevantBooks;
       this.renderBooks();
     });
 
@@ -131,6 +140,7 @@ class BookList {
 
   private renderBooks() {
     const bookElement = document.getElementById(`${this.type}-books-list`)!;
+    bookElement.innerHTML = "";
     for (const book of this.addedBooks) {
       const listItem = document.createElement("li");
       listItem.textContent = book.title;
