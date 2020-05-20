@@ -100,29 +100,59 @@ function Autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   return adjDescriptor;
 }
 
-class BookList {
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   templateElement: HTMLTemplateElement;
-  hostElement: HTMLDivElement;
-  element: HTMLElement;
-  addedBooks: Book[];
+  hostElement: T;
+  element: U;
 
-  constructor(private type: "to read" | "reading" | "finished") {
+  constructor(
+    templateId: string,
+    hostElementId: string,
+    insertAtStart: boolean,
+    newElementId?: string
+  ) {
     this.templateElement = document.getElementById(
-      "book-list"
+      templateId
     )! as HTMLTemplateElement;
-    this.hostElement = document.getElementById("app")! as HTMLDivElement;
-    this.addedBooks = [];
+    this.hostElement = document.getElementById(hostElementId)! as T;
 
     const importedNode = document.importNode(
       this.templateElement.content,
       true
     );
-    this.element = importedNode.firstElementChild as HTMLElement;
-    this.element.id = `${this.type}-books`;
+    this.element = importedNode.firstElementChild as U;
+    if (newElementId) this.element.id = newElementId;
 
+    this.attach(insertAtStart);
+  }
+
+  private attach(insertAtStart: boolean) {
+    this.hostElement.insertAdjacentElement(
+      insertAtStart ? "afterbegin" : "beforeend",
+      this.element
+    );
+  }
+
+  abstract configure(): void;
+  abstract renderContent(): void;
+}
+
+class BookList extends Component<HTMLDivElement, HTMLElement> {
+  addedBooks: Book[];
+
+  constructor(private type: "to-read" | "reading" | "finished") {
+    super("book-list", "app", false, `${type}-books`);
+
+    this.addedBooks = [];
+
+    this.configure();
+    this.renderContent();
+  }
+
+  configure() {
     bookState.addListener((books: Book[]) => {
       const relevantBooks = books.filter((book) => {
-        if (this.type === "to read") {
+        if (this.type === "to-read") {
           return book.status === BookStatus.ToRead;
         } else if (this.type === "reading") {
           return book.status === BookStatus.Reading;
@@ -133,13 +163,16 @@ class BookList {
       this.addedBooks = relevantBooks;
       this.renderBooks();
     });
+  }
 
-    this.renderContent();
-    this.attach();
+  renderContent() {
+    const listId = `${this.type}-book-list`;
+    this.element.querySelector("ul")!.id = listId;
+    this.element.querySelector("h2")!.textContent = this.type.toUpperCase();
   }
 
   private renderBooks() {
-    const bookElement = document.getElementById(`${this.type}-books-list`)!;
+    const bookElement = document.getElementById(`${this.type}-book-list`)!;
     bookElement.innerHTML = "";
     for (const book of this.addedBooks) {
       const listItem = document.createElement("li");
@@ -148,41 +181,19 @@ class BookList {
       bookElement.appendChild(listItem);
     }
   }
-
-  private renderContent() {
-    const listId = `${this.type}-books-list`;
-    this.element.querySelector("ul")!.id = listId;
-    this.element.querySelector("h2")!.textContent = this.type.toUpperCase();
-  }
-
-  private attach() {
-    this.hostElement.insertAdjacentElement("beforeend", this.element);
-  }
 }
 
-class BookInput {
-  templateElement: HTMLTemplateElement;
-  hostElement: HTMLDivElement;
-  element: HTMLFormElement;
+class BookInput extends Component<HTMLDivElement, HTMLFormElement> {
   titleInputElement: HTMLInputElement;
   authorInputElement: HTMLInputElement;
   priorityInputElement: HTMLInputElement;
+
   titleErrorElement: HTMLElement;
   authorErrorElement: HTMLElement;
   priorityErrorElement: HTMLElement;
 
   constructor() {
-    this.templateElement = document.getElementById(
-      "book-input"
-    )! as HTMLTemplateElement;
-    this.hostElement = document.getElementById("app")! as HTMLDivElement;
-
-    const importedNode = document.importNode(
-      this.templateElement.content,
-      true
-    );
-    this.element = importedNode.firstElementChild as HTMLFormElement;
-    this.element.id = "user-input";
+    super("book-input", "app", true, "user-input");
 
     this.titleInputElement = this.element.querySelector(
       "#title"
@@ -205,8 +216,19 @@ class BookInput {
     ) as HTMLElement;
 
     this.configure();
-    this.attach();
   }
+
+  configure() {
+    this.element.addEventListener("submit", this.submitHandler);
+    this.titleInputElement.addEventListener("keypress", this.clearTitleError);
+    this.authorInputElement.addEventListener("keypress", this.clearAuthorError);
+    this.priorityInputElement.addEventListener(
+      "keypress",
+      this.clearPriorityError
+    );
+  }
+
+  renderContent() {}
 
   private validateField(
     validatable: Validatable,
@@ -215,12 +237,13 @@ class BookInput {
   ): boolean {
     if (validate(validatable)) {
       if (errorElement.innerText === errorText) {
-        errorElement.parentNode?.removeChild(errorElement);
+        errorElement.innerText = "";
+        // errorElement.parentNode?.removeChild(errorElement);
       }
       return true;
     } else {
       if (errorElement?.innerText !== errorText) {
-        errorElement.appendChild(document.createTextNode(errorText));
+        errorElement.innerText = errorText;
       }
       return false;
     }
@@ -282,12 +305,15 @@ class BookInput {
     this.priorityInputElement.value = "";
   }
 
+  @Autobind
   private clearTitleError() {
     this.titleErrorElement.innerText = "";
   }
+  @Autobind
   private clearAuthorError() {
     this.authorErrorElement.innerText = "";
   }
+  @Autobind
   private clearPriorityError() {
     this.priorityErrorElement.innerText = "";
   }
@@ -302,31 +328,9 @@ class BookInput {
       this.clearInputs();
     }
   }
-
-  private configure() {
-    this.element.addEventListener("submit", this.submitHandler);
-
-    this.titleInputElement.addEventListener("keypress", this.clearTitleError);
-    this.authorInputElement.addEventListener("keypress", this.clearAuthorError);
-    this.priorityInputElement.addEventListener(
-      "keypress",
-      this.clearPriorityError
-    );
-
-    this.titleInputElement.addEventListener("blur", () => this.clearTitleError);
-    this.authorInputElement.addEventListener(
-      "blur",
-      () => this.clearAuthorError
-    );
-    this.priorityInputElement.addEventListener("blur", this.clearPriorityError);
-  }
-
-  private attach() {
-    this.hostElement.insertAdjacentElement("afterbegin", this.element);
-  }
 }
 
 const bookInput = new BookInput();
-const toReadInput = new BookList("to read");
+const toReadInput = new BookList("to-read");
 const readingInput = new BookList("reading");
 const finishedInput = new BookList("finished");
