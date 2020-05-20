@@ -16,16 +16,25 @@ class Book {
   ) {}
 }
 
-type Listener = (items: Book[]) => void;
+type Listener<T> = (items: T[]) => void;
+
+class State<T> {
+  protected listeners: Listener<T>[] = [];
+
+  addListener(listenerFn: Listener<T>) {
+    this.listeners.push(listenerFn);
+  }
+}
 
 // State Management
-class BookState {
-  private listeners: Listener[] = [];
+class BookState extends State<Book> {
   private books: Book[] = [];
   private static instance: BookState;
 
   // private constructor guarantees singleton class (only one instance of BookState)
-  private constructor() {}
+  private constructor() {
+    super();
+  }
 
   static getInstance() {
     if (this.instance) {
@@ -33,10 +42,6 @@ class BookState {
     }
     this.instance = new BookState();
     return this.instance;
-  }
-
-  addListener(listenerFn: Listener) {
-    this.listeners.push(listenerFn);
   }
 
   addBook(title: string, author: string, priority: number) {
