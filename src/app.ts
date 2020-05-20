@@ -1,3 +1,43 @@
+// State Management
+class BookState {
+  private listeners: any[] = [];
+  private books: any[] = [];
+  private static instance: BookState;
+
+  // private constructor guarantees singleton class (only one instance of BookState)
+  private constructor() {}
+
+  static getInstance() {
+    if (this.instance) {
+      return this.instance;
+    }
+    this.instance = new BookState();
+    return this.instance;
+  }
+
+  addListener(listenerFn: Function) {
+    // console.log('this.listeners', this.listeners)
+    this.listeners.push(listenerFn);
+  }
+
+  addBook(title: string, author: string, priority: number) {
+    const newBook = {
+      id: Math.random().toString(),
+      title,
+      author,
+      priority,
+    };
+    this.books.push(newBook);
+    for (const listenerFn of this.listeners) {
+      // use a copy of array (so array is not mutated)
+      listenerFn(this.books.slice());
+    }
+  }
+}
+
+// global constant that can be used anywhere in file
+const bookState = BookState.getInstance();
+
 interface Validatable {
   value: string | number;
   required?: boolean;
@@ -44,12 +84,14 @@ class BookList {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
+  addedBooks: any[];
 
-  constructor(private type: 'to read' | 'reading' | 'finished') {
+  constructor(private type: "to read" | "reading" | "finished") {
     this.templateElement = document.getElementById(
       "book-list"
     )! as HTMLTemplateElement;
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
+    this.addedBooks = [];
 
     const importedNode = document.importNode(
       this.templateElement.content,
@@ -58,18 +100,33 @@ class BookList {
     this.element = importedNode.firstElementChild as HTMLElement;
     this.element.id = `${this.type}-books`;
 
+    bookState.addListener((books: any[]) => {
+      this.addedBooks = books;
+      this.renderBooks();
+    });
+
     this.renderContent();
     this.attach();
   }
 
+  private renderBooks() {
+    const bookElement = document.getElementById(`${this.type}-books-list`)!;
+    for (const book of this.addedBooks) {
+      const listItem = document.createElement("li");
+      listItem.textContent = book.title;
+
+      bookElement.appendChild(listItem);
+    }
+  }
+
   private renderContent() {
     const listId = `${this.type}-books-list`;
-    this.element.querySelector('ul')!.id = listId;
-    this.element.querySelector('h2')!.textContent = this.type.toUpperCase();
+    this.element.querySelector("ul")!.id = listId;
+    this.element.querySelector("h2")!.textContent = this.type.toUpperCase();
   }
 
   private attach() {
-    this.hostElement.insertAdjacentElement('beforeend', this.element);
+    this.hostElement.insertAdjacentElement("beforeend", this.element);
   }
 }
 
@@ -107,9 +164,15 @@ class BookInput {
       "#priority"
     ) as HTMLInputElement;
 
-    this.titleErrorElement = this.element.querySelector('#title-error') as HTMLElement;
-    this.authorErrorElement = this.element.querySelector('#author-error') as HTMLElement;
-    this.priorityErrorElement = this.element.querySelector('#priority-error') as HTMLElement;
+    this.titleErrorElement = this.element.querySelector(
+      "#title-error"
+    ) as HTMLElement;
+    this.authorErrorElement = this.element.querySelector(
+      "#author-error"
+    ) as HTMLElement;
+    this.priorityErrorElement = this.element.querySelector(
+      "#priority-error"
+    ) as HTMLElement;
 
     this.configure();
     this.attach();
@@ -120,7 +183,6 @@ class BookInput {
     errorElement: HTMLElement,
     errorText: string
   ): boolean {
-
     if (validate(validatable)) {
       if (errorElement.innerText === errorText) {
         errorElement.parentNode?.removeChild(errorElement);
@@ -158,7 +220,7 @@ class BookInput {
       min: 1,
       max: 10,
     };
-    
+
     const titleErrorText = "Please enter a title";
     const authorErrorText = "Please enter an author";
     const priorityErrorText =
@@ -175,7 +237,7 @@ class BookInput {
       this.authorErrorElement,
       authorErrorText
     );
-   isValid = this.validateField(
+    isValid = this.validateField(
       priorityValidatable,
       this.priorityErrorElement,
       priorityErrorText
@@ -191,13 +253,13 @@ class BookInput {
   }
 
   private clearTitleError() {
-    this.titleErrorElement.innerText = '';
+    this.titleErrorElement.innerText = "";
   }
   private clearAuthorError() {
-    this.authorErrorElement.innerText = '';
+    this.authorErrorElement.innerText = "";
   }
   private clearPriorityError() {
-    this.priorityErrorElement.innerText = '';
+    this.priorityErrorElement.innerText = "";
   }
 
   @Autobind
@@ -206,7 +268,7 @@ class BookInput {
     const userInput = this.gatherUserInput();
     if (Array.isArray(userInput)) {
       const [title, author, priority] = userInput;
-      console.log("title, author, priority: ", title, author, priority);
+      bookState.addBook(title, author, priority);
       this.clearInputs();
     }
   }
@@ -214,13 +276,19 @@ class BookInput {
   private configure() {
     this.element.addEventListener("submit", this.submitHandler);
 
-    this.titleInputElement.addEventListener('keypress', this.clearTitleError);
-    this.authorInputElement.addEventListener('keypress', this.clearAuthorError);
-    this.priorityInputElement.addEventListener('keypress', this.clearPriorityError);
+    this.titleInputElement.addEventListener("keypress", this.clearTitleError);
+    this.authorInputElement.addEventListener("keypress", this.clearAuthorError);
+    this.priorityInputElement.addEventListener(
+      "keypress",
+      this.clearPriorityError
+    );
 
-    this.titleInputElement.addEventListener('blur', () => this.clearTitleError);
-    this.authorInputElement.addEventListener('blur', () => this.clearAuthorError);
-    this.priorityInputElement.addEventListener('blur', this.clearPriorityError);
+    this.titleInputElement.addEventListener("blur", () => this.clearTitleError);
+    this.authorInputElement.addEventListener(
+      "blur",
+      () => this.clearAuthorError
+    );
+    this.priorityInputElement.addEventListener("blur", this.clearPriorityError);
   }
 
   private attach() {
@@ -229,6 +297,6 @@ class BookInput {
 }
 
 const bookInput = new BookInput();
-const toReadInput = new BookList('to read');
-const readingInput = new BookList('reading');
-const finishedInput = new BookList('finished');
+const toReadInput = new BookList("to read");
+const readingInput = new BookList("reading");
+const finishedInput = new BookList("finished");
